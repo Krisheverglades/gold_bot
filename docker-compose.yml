@@ -1,0 +1,20 @@
+services:
+  bot-h1:
+    build: .
+    container_name: gold-bot-h1
+    restart: unless-stopped
+    env_file:
+      - .env.h1
+    volumes:
+      - ./data-h1:/app/data
+    working_dir: /app
+
+  bot-h4:
+    build: .
+    container_name: gold-bot-h4
+    restart: unless-stopped
+    env_file:
+      - .env.h4
+    volumes:
+      - ./data-h4:/app/data
+    working_dir: /app
