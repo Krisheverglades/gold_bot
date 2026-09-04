@@ -1,0 +1,16 @@
+[Unit]
+Description=Gold WaveTrend Trading Bot (OANDA)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=trader
+WorkingDirectory=/home/trader/gold-bot-h1
+EnvironmentFile=/home/trader/gold-bot-h1/.env
+ExecStart=/usr/bin/python3 /home/trader/gold-bot-h1/main.py
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target
