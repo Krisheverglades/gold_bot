@@ -30,4 +30,6 @@ MAX_DAILY_LOSS_PCT = 0.03      # kill-switch: stop trading if daily loss exceeds
 POLL_INTERVAL_SECONDS = 60     # how often the main loop checks for a new closed candle
 
 # --- Safety ---
-KILL_SWITCH_FILE = "killswitch.flag"  # if this file exists, bot halts all new trades
+DATA_DIR = os.environ.get("DATA_DIR", ".")  # where logs + killswitch live; set to /app/data in Docker
+KILL_SWITCH_FILE = os.path.join(DATA_DIR, "killswitch.flag")  # if this file exists, bot halts all new trades
+LOG_FILE = os.path.join(DATA_DIR, "trading_bot.log")
