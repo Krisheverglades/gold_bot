@@ -1,0 +1,11 @@
+.env
+.env.h1
+.env.h4
+*.log
+__pycache__/
+*.pyc
+killswitch*.flag
+equity_curve.png
+.git/
+README.md
+*.service
