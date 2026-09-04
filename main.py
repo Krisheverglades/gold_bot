@@ -17,11 +17,13 @@ from oanda_client import OandaClient
 from wavetrend_signal import compute_wavetrend, get_latest_signal
 from risk_engine import compute_atr, compute_position_size, compute_sl_tp
 
+os.makedirs(config.DATA_DIR, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("trading_bot.log"),
+        logging.FileHandler(config.LOG_FILE),
         logging.StreamHandler(),
     ],
 )
