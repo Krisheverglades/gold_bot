@@ -34,13 +34,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [RAPID] %(levelname)
 log = logging.getLogger("rapid")
 
 def main():
-    if MODE != "paper":
-        raise RuntimeError("Rapid strategy live execution is locked. Validate paper/backtest results first.")
+    if MODE not in ("paper", "live"):
+        raise ValueError("RAPID_MODE must be paper or live")
     client = OandaClient()
-    state = RapidState(balance=START_BALANCE, starting_balance=START_BALANCE)
+    if MODE == "live" and os.environ.get("RAPID_LIVE_CONFIRM", "") != "YES":
+        raise RuntimeError("Set RAPID_LIVE_CONFIRM=YES to enable real order execution")
+    initial_balance = client.get_account_balance() if MODE == "live" else START_BALANCE
+    state = RapidState(balance=initial_balance, starting_balance=initial_balance)
     last_time = None
     bar_index = 0
-    log.info("Strategy 2 started | mode=%s granularity=%s balance=%.2f", MODE, GRANULARITY, START_BALANCE)
+    log.info("Strategy 2 started | mode=%s granularity=%s balance=%.2f", MODE, GRANULARITY, initial_balance)
     while True:
         try:
             df = client.get_candles("XAU_USD", GRANULARITY, count=max(50, LOOKBACK + 5))
@@ -54,19 +57,34 @@ def main():
             price = float(df.iloc[-1]["close"])
             reason = basket_exit_reason(state, price, BASKET_TP, BASKET_SL, MAX_DRAWDOWN) if state.positions else None
             if reason:
-                pnl = close_basket(state, price, SPREAD)
-                log.info("%s close | pnl=%.2f balance=%.2f", reason, pnl, state.balance)
+                if MODE == "live":
+                    client.close_position("XAU_USD")
+                    state.balance = client.get_account_balance()
+                    state.positions.clear()
+                    log.info("%s LIVE basket close | account balance=%.2f", reason, state.balance)
+                else:
+                    pnl = close_basket(state, price, SPREAD)
+                    log.info("%s PAPER close | pnl=%.2f balance=%.2f", reason, pnl, state.balance)
             if os.path.exists(KILL_SWITCH):
                 log.warning("Rapid kill switch active")
                 time.sleep(POLL_SECONDS); continue
-            if state.equity(price) <= START_BALANCE * (1 - MAX_DRAWDOWN):
+            reference_balance = initial_balance
+            if state.equity(price) <= reference_balance * (1 - MAX_DRAWDOWN):
                 log.warning("Rapid equity stop reached; no new entries")
                 time.sleep(POLL_SECONDS); continue
             signal = momentum_signal(df, len(df)-1, LOOKBACK, MOMENTUM)
             if signal and can_stack(state, signal, price, bar_index, MAX_POSITIONS, SPACING, COOLDOWN):
-                add_position(state, signal, price, UNITS, bar_index, SPREAD)
-                log.info("%s paper entry | price=%.2f units=%.2f stack=%d equity=%.2f",
-                         signal.upper(), price, UNITS, len(state.positions), state.equity(price))
+                if MODE == "live":
+                    order_units = int(UNITS) if signal == "buy" else -int(UNITS)
+                    if order_units == 0:
+                        log.warning("RAPID_UNITS must be at least 1 for live OANDA orders")
+                    else:
+                        client.place_market_order("XAU_USD", order_units)
+                        add_position(state, signal, price, abs(order_units), bar_index, 0.0)
+                        log.info("%s LIVE entry | price~%.2f units=%d stack=%d", signal.upper(), price, abs(order_units), len(state.positions))
+                else:
+                    add_position(state, signal, price, UNITS, bar_index, SPREAD)
+                    log.info("%s PAPER entry | price=%.2f units=%.2f stack=%d equity=%.2f", signal.upper(), price, UNITS, len(state.positions), state.equity(price))
         except Exception:
             log.exception("Rapid strategy loop error")
         time.sleep(POLL_SECONDS)
