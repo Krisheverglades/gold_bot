@@ -90,6 +90,41 @@ class OandaClient:
         df = pd.DataFrame(all_rows).drop_duplicates(subset="time").reset_index(drop=True)
         return df
 
+
+    def get_account_summary(self) -> dict:
+        """Return live broker account state used to reconcile the rapid strategy."""
+        url = f"{self.base_url}/v3/accounts/{self.account_id}/summary"
+        resp = self.session.get(url)
+        resp.raise_for_status()
+        a = resp.json()["account"]
+        return {
+            "balance": float(a["balance"]),
+            "nav": float(a["NAV"]),
+            "margin_used": float(a["marginUsed"]),
+            "margin_available": float(a["marginAvailable"]),
+            "unrealized_pl": float(a["unrealizedPL"]),
+        }
+
+    def get_open_trades(self, instrument: str = None) -> list:
+        """Return open trades, optionally filtered by instrument."""
+        url = f"{self.base_url}/v3/accounts/{self.account_id}/openTrades"
+        resp = self.session.get(url)
+        resp.raise_for_status()
+        trades = []
+        for t in resp.json().get("trades", []):
+            if instrument and t.get("instrument") != instrument:
+                continue
+            units = float(t["currentUnits"])
+            trades.append({
+                "id": t["id"],
+                "instrument": t["instrument"],
+                "units": units,
+                "direction": "buy" if units > 0 else "sell",
+                "price": float(t["price"]),
+                "unrealized_pl": float(t.get("unrealizedPL", 0)),
+            })
+        return trades
+
     def get_account_balance(self) -> float:
         url = f"{self.base_url}/v3/accounts/{self.account_id}/summary"
         resp = self.session.get(url)
