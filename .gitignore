@@ -1,0 +1,15 @@
+# Secrets
+.env
+.env.*
+!.env.ctrader.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Runtime
+data/
+*.log
+killswitch.flag
