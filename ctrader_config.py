@@ -1,5 +1,9 @@
 """Configuration for the cTrader rapid XAUUSD bot."""
 import os
+from dotenv import load_dotenv
+
+# Load VPS/local secrets automatically. Existing exported variables keep priority.
+load_dotenv(override=False)
 
 CTRADER_CLIENT_ID = os.environ.get("CTRADER_CLIENT_ID", "")
 CTRADER_CLIENT_SECRET = os.environ.get("CTRADER_CLIENT_SECRET", "")
@@ -19,6 +23,6 @@ BASKET_SL = float(os.environ.get("BASKET_SL", "15.0"))
 MAX_DAILY_LOSS = float(os.environ.get("MAX_DAILY_LOSS", "30.0"))
 COOLDOWN_SECONDS = float(os.environ.get("COOLDOWN_SECONDS", "1.0"))
 
-DATA_DIR = os.environ.get("DATA_DIR", ".")
+DATA_DIR = os.environ.get("DATA_DIR", "./data")
 KILL_SWITCH_FILE = os.path.join(DATA_DIR, "killswitch.flag")
 LOG_FILE = os.path.join(DATA_DIR, "rapid_scalper.log")
