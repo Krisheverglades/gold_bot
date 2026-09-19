@@ -1,31 +1,17 @@
 services:
-  bot-h1:
-    build: .
-    container_name: gold-bot-h1
-    restart: unless-stopped
-    env_file:
-      - .env.h1
-    volumes:
-      - ./data-h1:/app/data
-    working_dir: /app
-
-  bot-h4:
-    build: .
-    container_name: gold-bot-h4
-    restart: unless-stopped
-    env_file:
-      - .env.h4
-    volumes:
-      - ./data-h4:/app/data
-    working_dir: /app
-
-  bot-rapid:
-    build: .
+  gold-rapid:
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: gold-bot-rapid
     restart: unless-stopped
-    command: ["python3", "rapid_main.py"]
     env_file:
-      - .env.rapid
+      - .env
+    environment:
+      CTRADER_ENV: demo
+      PAPER_TRADING: "true"
+      DATA_DIR: /app/data
     volumes:
-      - ./data-rapid:/app/data
+      - ./data:/app/data
     working_dir: /app
+    command: ["python", "rapid_main.py"]
